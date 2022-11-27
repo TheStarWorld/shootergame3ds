@@ -2,14 +2,19 @@ text = "test"
 
 gamepadbuttons = {}
 
-playerx_s = 0
-playery_s = 0
+cursorx = 250
+cursory = 70
 
-playerx = 200
-playery = 120
+--cirlce pad directions
+leftx = 0
+lefty = 0
+rightx = 0
+righty = 0
 
-cursorx = 200
-cursory = 120
+maxspeed = 1.7
+
+controltype = 1
+pointer_r = -1 
 
 touch = false
 
@@ -23,8 +28,11 @@ function love.load()
 	pointerimg = love.graphics.newImage("pointer.png")
 	cursorimg = love.graphics.newImage("cursor.png")
 	bulletimg = love.graphics.newImage("bullet.png")
+	bullet2img = love.graphics.newImage("projectile1.png")
 	Object = require "classic"
 	require "bullet"
+	require "player"
+	player = Player(200,120)
 	bullets = {}
 end
 
@@ -67,11 +75,9 @@ w_width = love.graphics.getWidth()
 w_height = love.graphics.getHeight()
 
 function love.draw(screen)
-    --love.graphics.circle("fill", playerx, playery, 10)
 	if screen ~= "bottom" then
 		w_width = love.graphics.getWidth()
-		love.graphics.draw(playerimg,playerx-3,playery-3)
-		love.graphics.draw(pointerimg,playerx+math.cos(pointer_r)*10, playery+math.sin(pointer_r)*10)
+		player:draw()
 		
 		love.graphics.setLineWidth(10)
 		love.graphics.rectangle("line", 0, 0, 400, 240)
@@ -91,17 +97,6 @@ function love.draw(screen)
 	love.graphics.draw(cursorimg,cursorx-4,cursory-4)
 end 
 
-leftx = 0
-lefty = 0
-rightx = 0
-righty = 0
-speed = 1
-maxspeed = 1.7
-controltype = 1
-pointer_r = -1 
-
-shoottimer = 0
-
 function round(num,times,add,subt)
 	num1 = math.floor((num * times)+add)/times-subt
 	if math.abs(num1) > 0.1 then
@@ -109,11 +104,12 @@ function round(num,times,add,subt)
 		else
 			return(0)
 	end
-	--return(math.floor(num1+add)/times-subt)
+	return(math.floor(num1+add)/times-subt)
 end
 
 function love.update()
-	pointer_r = angle(playerx,cursorx,playery,cursory)
+	player:update()
+
 	if loaded ~= nil then
 		if controltype == 1 then
 			leftx = round(loaded:getGamepadAxis("leftx"),10,0,0)*maxspeed
@@ -137,21 +133,6 @@ function love.update()
 			lefty = maxspeed
 		end
 	end
-	speed = 1
-	if buttondown("leftshoulder") then
-		speed = 0.8
-	end
-	
-	--playerx_s = lerp(playerx_s,0,0.1)
-	--playery_s = lerp(playery_s,0,0.1)
-	
-	playerx_s = lerp(playerx_s,leftx,0.2)
-	playery_s = lerp(playery_s,lefty,0.2)
-	
-	if buttondown("a") then
-		playerx = 200
-		playery = 120
-	end
 	
 	for i,v in ipairs(bullets) do
 		v:update()
@@ -160,28 +141,8 @@ function love.update()
 		end
 	end
 	
-	shoottimer = shoottimer+1
-	
-	if shoottimer % 7 == 0 and (buttondown("rightshoulder") or touch) then
-		table.insert(bullets,Bullet(playerx,playery,pointer_r))
-	end
-	
-	playerx = playerx + playerx_s*speed
-	playery = playery + playery_s*speed
 	cursorx = cursorx + rightx
 	cursory = cursory + righty
-	
-	if playerx < 0 then
-		playerx = 0
-	elseif playerx > w_width then
-		playerx = w_width
-	end
-	
-	if playery < 0 then
-		playery = 0
-	elseif playery > w_height then
-		playery = w_height
-	end
 end
 
 function love.gamepadpressed(joystick,button)
