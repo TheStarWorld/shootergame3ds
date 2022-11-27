@@ -8,22 +8,20 @@ playery_s = 0
 playerx = 200
 playery = 120
 
+cursorx = 50
+cursory = 110
+
 isds = false
 
 loaded = nil
 
+function angle(x1,x2,y1,y2)
+	return math.atan2(y2-y1, x2-x1)
+end
+
 function love.gamepadaxis(joy, axis, value)
 	if round(value,10,0,0) > 0 and axis:find("left") then
 		controltype = 1
-	end
-end
-
-function isDownCheck(key)
-	if isds == true then
-			return(false)
-		else
-			return(false)
-			--return(love.keyboard.isDown(key))
 	end
 end
 
@@ -43,6 +41,7 @@ function love.load()
 	loaded = love.joystick.getJoysticks()[1]
 	playerimg = love.graphics.newImage("circle.png")
 	pointerimg = love.graphics.newImage("pointer.png")
+	cursorimg = love.graphics.newImage("cursor.png")
 end
 
 function love.draw(screen)
@@ -60,11 +59,16 @@ function love.draw(screen)
 		love.graphics.print(tostring(controltype), 50, 140)
 		love.graphics.print(tostring(text), 50, 160)
 		love.graphics.print(tostring(pointer_r), 50, 180)
+		love.graphics.print(tostring(speed), 50, 200)
 	end
+	love.graphics.draw(cursorimg,cursorx,cursory)
 end 
 
 leftx = 0
 lefty = 0
+rightx = 0
+righty = 0
+speed = 1
 maxspeed = 1.7
 controltype = 1
 pointer_r = -1 
@@ -80,27 +84,33 @@ function round(num,times,add,subt)
 end
 
 function love.update()
+	pointer_r = angle(playerx,cursorx,playery,cursory)
 	if loaded ~= nil then
-		pointer_r = math.atan2(loaded:getGamepadAxis("righty")/3,loaded:getGamepadAxis("rightx")/3)
 		if controltype == 1 then
 			leftx = round(loaded:getGamepadAxis("leftx"),10,0,0)*maxspeed
 			lefty = round(loaded:getGamepadAxis("lefty"),10,0,0)*maxspeed
+			rightx = round(loaded:getGamepadAxis("rightx"),10,0,0)*4
+			righty = round(loaded:getGamepadAxis("righty"),10,0,0)*4
 		end
 	end
 	
 	if controltype == 2 then
-		if isDownCheck("d") or buttondown("dpright") then
+		if buttondown("dpright") then
 			leftx = maxspeed
 		end
-		if isDownCheck("a") or buttondown("dpleft") then
+		if buttondown("dpleft") then
 			leftx = -maxspeed
 		end
-		if isDownCheck("w") or buttondown("dpup") then
+		if buttondown("dpup") then
 			lefty = -maxspeed
 		end
-		if isDownCheck("s") or buttondown("dpdown") then
+		if buttondown("dpdown") then
 			lefty = maxspeed
 		end
+	end
+	speed = 1
+	if buttondown("leftshoulder") then
+		speed = 0.8
 	end
 	
 	--playerx_s = lerp(playerx_s,0,0.1)
@@ -114,8 +124,10 @@ function love.update()
 		playery = 120
 	end
 	
-	playerx = playerx + playerx_s
-	playery = playery + playery_s
+	playerx = playerx + playerx_s*speed
+	playery = playery + playery_s*speed
+	cursorx = cursorx + rightx
+	cursory = cursory + righty
 end
 
 function love.gamepadpressed(joystick,button)
