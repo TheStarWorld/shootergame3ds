@@ -5,11 +5,14 @@ gamepadbuttons = {}
 cursorx = 250
 cursory = 70
 
---cirlce pad directions
 leftx = 0
 lefty = 0
 rightx = 0
 righty = 0
+
+ai_t = 0
+
+ready = false
 
 maxspeed = 1.7
 
@@ -22,6 +25,25 @@ isds = false
 
 loaded = nil
 
+debugm = false
+
+function collide(a,b)
+	local a_left = a.x
+	local a_right = a.x + a.width
+	local a_top = a.y
+	local a_bottom = a.y + a.height
+	
+	local b_left = b.x
+	local b_right = b.x + b.width
+	local b_top = b.y
+	local b_bottom = b.y + b.height
+	
+	return a_right > b_left
+	and a_left < b_right
+	and a_bottom > b_top
+	and a_top < b_bottom
+end
+
 function love.load()
 	loaded = love.joystick.getJoysticks()[1]
 	playerimg = love.graphics.newImage("circle.png")
@@ -29,11 +51,15 @@ function love.load()
 	cursorimg = love.graphics.newImage("cursor.png")
 	bulletimg = love.graphics.newImage("bullet.png")
 	bullet2img = love.graphics.newImage("projectile1.png")
+	enemyimg = love.graphics.newImage("enemy.png")
 	Object = require "classic"
 	require "bullet"
 	require "player"
+	require "enemy"
 	player = Player(200,120)
 	bullets = {}
+	enemies = {}
+	table.insert(enemies,Enemy(300,100))
 end
 
 function angle(x1,x2,y1,y2)
@@ -81,8 +107,12 @@ function love.draw(screen)
 		
 		love.graphics.setLineWidth(10)
 		love.graphics.rectangle("line", 0, 0, 400, 240)
+		love.graphics.setLineWidth(1)
 		
 		for i,v in ipairs(bullets) do
+			v:draw()
+		end
+		for i,v in ipairs(enemies) do
 			v:draw()
 		end
 		
@@ -108,15 +138,29 @@ function round(num,times,add,subt)
 end
 
 function love.update()
+	--[[
+	if love.keyboard.isDown("a") then
+		ready = true
+	end
+	cursorx = love.mouse.getX()
+	cursory = love.mouse.getY()
+	--]]
+
 	player:update()
 
 	if loaded ~= nil then
+		rightx = round(loaded:getGamepadAxis("rightx"),10,0,0)*4
+		righty = round(loaded:getGamepadAxis("righty"),10,0,0)*4
 		if controltype == 1 then
 			leftx = round(loaded:getGamepadAxis("leftx"),10,0,0)*maxspeed
 			lefty = round(loaded:getGamepadAxis("lefty"),10,0,0)*maxspeed
-			rightx = round(loaded:getGamepadAxis("rightx"),10,0,0)*4
-			righty = round(loaded:getGamepadAxis("righty"),10,0,0)*4
 		end
+	end
+	
+	if ready == true then
+			ai_t = ai_t + 1
+		else
+			ai_t = 0
 	end
 	
 	if controltype == 2 then
@@ -140,6 +184,12 @@ function love.update()
 			table.remove(bullets,i)
 		end
 	end
+	for i,v in ipairs(enemies) do
+		v:update()
+		if v.despawn == true then
+			table.remove(enemies,i)
+		end
+	end
 	
 	cursorx = cursorx + rightx
 	cursory = cursory + righty
@@ -159,6 +209,15 @@ function love.gamepadpressed(joystick,button)
 	end
 	if button == "dpdown" then
 		controltype = 2
+	end
+	if button == "start" then
+		table.insert(enemies,Enemy(cursorx,cursory))
+	end
+	if button == "back" then
+		ready = not ready
+	end
+	if button == "x" then
+		debugm = not debugm
 	end
 end
 

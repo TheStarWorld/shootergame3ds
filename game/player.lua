@@ -15,6 +15,15 @@ function Player:new(x,y)
 		height=0.2
 	}
 	
+	self.hitbox_p = {
+		x = self.x,
+		y = self.y,
+		width = 3,
+		height = 3,
+		off_x = 3,
+		off_y = 3
+	}
+	
 	self.playerx_s = 0
 	self.playery_s = 0
 	self.speed = 1
@@ -55,7 +64,7 @@ function Player:update()
 	self.shoottimer = self.shoottimer+1
 	
 	if self.shoottimer % 7 == 0 and (buttondown("rightshoulder") or touch) then
-		table.insert(bullets,Bullet(self.x,self.y,pointer_r,self.bullet_p))
+		table.insert(bullets,Bullet(self.x,self.y,pointer_r,self.bullet_p,self.hitbox_p))
 		self.shoottimer = 0
 	end
 end
